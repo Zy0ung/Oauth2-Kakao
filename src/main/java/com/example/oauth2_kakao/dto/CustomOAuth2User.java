@@ -13,46 +13,37 @@ import java.util.Map;
 /**
  * @author jiyoung
  */
+
+import java.util.Collections;
+
 public class CustomOAuth2User implements OAuth2User {
 
     private final UserDTO userDTO;
 
     public CustomOAuth2User(UserDTO userDTO) {
-
         this.userDTO = userDTO;
     }
 
     @Override
     public Map<String, Object> getAttributes() {
-
-        return null;
+        // UserDTO 객체를 통해 속성을 반환합니다.
+        return Map.of("username", userDTO.getUsername(), "email", userDTO.getEmail(), "name", userDTO.getName(), "role",
+                userDTO.getRole());
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        Collection<GrantedAuthority> collection = new ArrayList<>();
-
-        collection.add(new GrantedAuthority() {
-
-            @Override
-            public String getAuthority() {
-
-                return userDTO.getRole();
-            }
-        });
-
-        return collection;
+        // 사용자 권한을 반환합니다.
+        return Collections.singletonList(() -> userDTO.getRole());
     }
 
     @Override
     public String getName() {
-
-        return userDTO.getName();
+        // Spring Security에서 사용자 식별을 위해 getName() 메서드를 사용하므로 username을 반환합니다.
+        return userDTO.getUsername();
     }
 
     public String getUsername() {
-
         return userDTO.getUsername();
     }
 }

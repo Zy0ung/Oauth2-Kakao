@@ -29,16 +29,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        System.out.println(oAuth2User);
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
         OAuth2Response oAuth2Response = null;
+        String principalName = null;
 
         // Kakao로부터 사용자 정보를 처리
         if (registrationId.equals("kakao")) {
             oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
+            Object idAttribute = oAuth2User.getAttribute("id");
+            principalName = String.valueOf(idAttribute);
+        }
+
+        if (principalName == null || principalName.isEmpty()) {
+            throw new IllegalArgumentException("principalName이 비어있습니다.");
         }
 
         UserEntity existData = userRepository.findByUsername(oAuth2Response.getName());
