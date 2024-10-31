@@ -16,13 +16,12 @@ public class MainController {
     @GetMapping("/")
     @ResponseBody
     public String mainAPI() {
-
         return "main route";
     }
 
     @GetMapping("/success")
     @ResponseBody
-    public String SuccessAPI() {
+    public String LoginSuccessAPI() {
         return "login success";
     }
 }

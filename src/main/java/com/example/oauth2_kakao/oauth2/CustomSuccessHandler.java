@@ -49,7 +49,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String role = iterator.hasNext() ? iterator.next().getAuthority() : "ROLE_USER";
 
         // JWT 토큰 생성 (예: 1시간 유효기간)
-        String token = jwtUtil.createJwt(username, role, 60 * 60 * 60L);
+        String token = jwtUtil.createJwt(username, role);
 
         // Authorization 쿠키 추가
         response.addCookie(createCookie("Authorization", token));
