@@ -4,8 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-/Users/jiyoung/Desktop/oauth2-kakao/src/main/resources/application.yml
+secret.yml
 
 ### STS ###
 .apt_generated
