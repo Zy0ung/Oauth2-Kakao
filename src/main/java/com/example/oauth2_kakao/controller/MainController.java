@@ -19,4 +19,10 @@ public class MainController {
 
         return "main route";
     }
+
+    @GetMapping("/success")
+    @ResponseBody
+    public String SuccessAPI() {
+        return "login success";
+    }
 }
