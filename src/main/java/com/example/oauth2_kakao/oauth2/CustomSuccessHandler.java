@@ -27,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
-//    private final RedisService redisService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -37,7 +36,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         CustomOAuth2User customUserDetails = (CustomOAuth2User) authentication.getPrincipal();
 
         // 카카오 ID를 포함하는 사용자 이름 가져오기
-        String username = customUserDetails.getName();
+        String username = customUserDetails.getUserName();
 
         // 사용자의 권한 목록 가져오기
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
@@ -49,8 +48,6 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.createJwt("access", username, role, 60000L);
         String refreshToken = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
-        // redis에 insert (key = username / value = refreshToken)
-//        redisService.setValues(username, refreshToken, Duration.ofMills(86400000L));
         System.out.println(accessToken);
         System.out.println(refreshToken);
 
@@ -64,10 +61,10 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private Cookie createCookie(String key, String value) {
 
         Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(24 * 60 * 60);
-        //cookie.setSecure(true);
-//        cookie.setPath("/");
-        cookie.setHttpOnly(true);
+        cookie.setMaxAge(24 * 60 * 60); // 쿠키가 살아 있을 시간 (24시간)
+        // cookie.setSecure(true); https에서만 동작할 것인지 (로컬은 http 환경)
+        // cookie.setPath("/"); 쿠키가 전역에서 동작
+        cookie.setHttpOnly(true); // http에서만 쿠키가 동작할 수 있도록 (js와 같은 곳에서 가져갈 수 없도록 설정)
 
         return cookie;
     }

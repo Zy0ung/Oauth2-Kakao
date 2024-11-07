@@ -53,15 +53,6 @@ public class MainController {
             return;
         }
 
-//        String key = jwtUtil.getUsername(refreshToken);
-
-//        if(redisService.getValues(key) == null) {
-//            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-//            return;
-//        }
-//
-//        redisService.deleteValues(key);
-
         Cookie cookie = new Cookie("refresh", null);
         cookie.setMaxAge(0);
         cookie.setPath("/");
