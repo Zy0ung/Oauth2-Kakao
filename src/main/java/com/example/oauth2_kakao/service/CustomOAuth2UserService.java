@@ -47,14 +47,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new IllegalArgumentException("principalName이 비어있습니다.");
         }
 
+        // 사용자명을 제공자_회원아이디 형식으로 만들어 저장하여 redis에서도 key로 쓸 예정
+        String username = oAuth2Response.getProvider() + "_" + oAuth2Response.getProviderId();
+
         // 넘어온 회원정보가 이미 우리의 테이블에 존재하는지 확인
-        User existData = userRepository.findByName(oAuth2Response.getName());
+        User existData = userRepository.findByUserName(username);
 
         // 존재하지 않는다면 회원정보를 저장하고 CustomOAuth2User 반환
         if (existData == null) {
             User user = User.builder()
                     .provider(oAuth2Response.getProvider())
                     .providerId(oAuth2Response.getProviderId())
+                    .userName(username)
                     .name(oAuth2Response.getName())
                     .profileImage(oAuth2Response.getProfileImage())
                     .email(oAuth2Response.getEmail())
@@ -64,6 +68,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userRepository.save(user);
 
             UserDTO userDTO = new UserDTO();
+            userDTO.setUserName(username);
             userDTO.setName(oAuth2Response.getName());
             userDTO.setEmail(oAuth2Response.getEmail());
             userDTO.setProfileImage(oAuth2Response.getProfileImage());
@@ -80,6 +85,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userRepository.save(existData);
 
             UserDTO userDTO = new UserDTO();
+            userDTO.setUserName(username);
             userDTO.setName(existData.getName());
             userDTO.setEmail(oAuth2Response.getEmail());
             userDTO.setProfileImage(oAuth2Response.getProfileImage());
