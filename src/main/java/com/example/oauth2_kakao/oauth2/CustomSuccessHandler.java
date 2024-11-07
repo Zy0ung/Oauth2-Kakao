@@ -3,6 +3,7 @@ package com.example.oauth2_kakao.oauth2;
 import com.example.oauth2_kakao.dto.CustomOAuth2User;
 import com.example.oauth2_kakao.jwt.JWTUtil;
 
+import com.example.oauth2_kakao.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -11,6 +12,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -27,6 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
+    private final RedisService redisService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -48,12 +51,13 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.createJwt("access", username, role, 60000L);
         String refreshToken = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
-        System.out.println(accessToken);
-        System.out.println(refreshToken);
+        //redis에 insert (Key = username / value = refreshToken)
+        redisService.setValues(username, refreshToken, Duration.ofMillis(86400000L));
 
         // 응답
         response.setHeader("access", "Bearer " + accessToken);
         response.addCookie(createCookie("refresh", refreshToken));
+        System.out.println(refreshToken);
         response.setStatus(HttpStatus.OK.value());
         response.sendRedirect("/success");
     }
