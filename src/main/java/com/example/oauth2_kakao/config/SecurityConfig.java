@@ -48,11 +48,11 @@ public class SecurityConfig {
                         .successHandler(customSuccessHandler))
                 // JWT 필터 추가 (OAuth2 인증 이후 수행 되도록 설정)
                 .addFilterAfter(new JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class)
+                .logout(auth -> auth.logoutUrl("/logout").clearAuthentication(true).deleteCookies("JSESSIONID", "refresh").logoutSuccessUrl("/").permitAll())
                 //경로별 인가 작업
                 .authorizeHttpRequests((auth) -> auth.requestMatchers("/", "/login/**", "/success").permitAll().anyRequest().authenticated())
                 //세션 설정 : STATELESS
                 .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
         return http.build();
     }
 }
