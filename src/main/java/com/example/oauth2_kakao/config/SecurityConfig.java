@@ -1,6 +1,3 @@
-/*
- * Copyright ⓒ 2017 Brand X Corp. All Rights Reserved
- */
 package com.example.oauth2_kakao.config;
 
 import com.example.oauth2_kakao.service.CustomOAuth2UserService;
@@ -28,7 +25,7 @@ public class SecurityConfig {
     private final JWTUtil jwtUtil;
 
     public SecurityConfig(CustomOAuth2UserService customOAuth2UserService, CustomSuccessHandler customSuccessHandler,
-            JWTUtil jwtUtil) {
+                          JWTUtil jwtUtil) {
 
         this.customOAuth2UserService = customOAuth2UserService;
         this.customSuccessHandler = customSuccessHandler;
@@ -47,12 +44,12 @@ public class SecurityConfig {
                 .httpBasic((auth) -> auth.disable())
                 //oauth2
                 .oauth2Login((oauth2) -> oauth2.userInfoEndpoint(
-                                                       (userInfoEndpointConfig) -> userInfoEndpointConfig.userService(customOAuth2UserService))
-                                               .successHandler(customSuccessHandler))
+                                (userInfoEndpointConfig) -> userInfoEndpointConfig.userService(customOAuth2UserService))
+                        .successHandler(customSuccessHandler))
                 // JWT 필터 추가 (OAuth2 인증 이후 수행 되도록 설정)
                 .addFilterAfter(new JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class)
                 //경로별 인가 작업
-                .authorizeHttpRequests((auth) -> auth.requestMatchers("/").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests((auth) -> auth.requestMatchers("/", "/login/**", "/success").permitAll().anyRequest().authenticated())
                 //세션 설정 : STATELESS
                 .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

@@ -1,6 +1,3 @@
-/*
- * Copyright ⓒ 2017 Brand X Corp. All Rights Reserved
- */
 package com.example.oauth2_kakao.dto;
 
 import java.util.Map;
@@ -10,10 +7,16 @@ import java.util.Map;
  */
 public class KakaoResponse implements OAuth2Response {
 
-    private final Map<String, Object> attribute;
+    private final Map<String, Object> properties;
 
-    public KakaoResponse(Map<String, Object> attribute) {
-        this.attribute = attribute;
+    private final Map<String, Object> account;
+
+    private final String providerId;
+
+    public KakaoResponse(Map<String, Object> attributes) {
+        this.properties = (Map<String, Object>) attributes.get("properties");
+        this.account = (Map<String, Object>) attributes.get("kakao_account");
+        this.providerId = attributes.get("id").toString();
     }
 
     @Override
@@ -22,22 +25,22 @@ public class KakaoResponse implements OAuth2Response {
     }
 
     @Override
-    public String getId() {
-        // Extract the user ID from the "id" field in the response
-        return attribute.containsKey("id") ? attribute.get("id").toString() : null;
+    public String getProviderId() {
+        return this.providerId;
     }
 
     @Override
     public String getEmail() {
-        // Extract the email from the "kakao_account" -> "email" field
-        Map<String, Object> kakaoAccount = (Map<String, Object>) attribute.get("kakao_account");
-        return kakaoAccount != null && kakaoAccount.containsKey("email") ? kakaoAccount.get("email").toString() : null;
+        return this.account.get("email").toString();
     }
 
     @Override
     public String getName() {
-        // Extract the name from the "properties" -> "nickname" field
-        Map<String, Object> properties = (Map<String, Object>) attribute.get("properties");
-        return properties != null && properties.containsKey("nickname") ? properties.get("nickname").toString() : null;
+        return this.properties.get("nickname").toString();
+    }
+
+    @Override
+    public String getProfileImage() {
+        return this.properties.get("profile_image").toString();
     }
 }

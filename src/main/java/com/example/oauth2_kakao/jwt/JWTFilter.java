@@ -1,16 +1,15 @@
-/*
- * Copyright ⓒ 2017 Brand X Corp. All Rights Reserved
- */
 package com.example.oauth2_kakao.jwt;
 
 import com.example.oauth2_kakao.dto.CustomOAuth2User;
-import com.example.oauth2_kakao.dto.UserDTO;
 
+import com.example.oauth2_kakao.dto.UserDTO;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,88 +17,74 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * @author jiyoung
  */
+@RequiredArgsConstructor
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
-
-    public JWTFilter(JWTUtil jwtUtil) {
-
-        this.jwtUtil = jwtUtil;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String requestUri = request.getRequestURI();
+        // 요청 헤더에 있는 access라는 값을 가져오자 이게 accessToken이다.
+        String accessToken = request.getHeader("access");
 
-        if (requestUri.matches("^\\/login(?:\\/.*)?$")) {
-
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if (requestUri.matches("^\\/oauth2(?:\\/.*)?$")) {
-
+        // 요청헤더에 access가 없는 경우
+        if (accessToken == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        //cookie들을 불러온 뒤 Authorization Key에 담긴 쿠키를 찾음
-        String authorization = null;
-        Cookie[] cookies = request.getCookies();
-        for (Cookie cookie : cookies) {
+        // Bearer 제거 <- oAuth2를 이용했다고 명시적으로 붙여주는 타입인데 JWT를 검증하거나 정보를 추출 시 제거해줘야한다.
+        String originToken = accessToken.substring(7);
 
-            if (cookie.getName().equals("Authorization")) {
-                authorization = cookie.getValue();
-                System.out.println("Authorization " + authorization);
+        // 유효한지 확인 후 클라이언트로 상태 코드 응답
+        try {
+            if (jwtUtil.isExpired(originToken)) {
+                PrintWriter writer = response.getWriter();
+                writer.println("access token expired");
+
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
-        }
+        } catch (ExpiredJwtException e) {
+            PrintWriter writer = response.getWriter();
+            writer.println("access token expired");
 
-        //Authorization 헤더 검증
-        if (authorization == null) {
-
-            System.out.println("token null");
-            filterChain.doFilter(request, response);
-
-            //조건이 해당되면 메소드 종료 (필수)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        //토큰
-        String token = authorization;
+        // accessToken인지 refreshToken인지 확인
+        String category = jwtUtil.getCategory(originToken);
 
-        //토큰 소멸 시간 검증
-        if (jwtUtil.isExpired(token)) {
+        // JWTFilter는 요청에 대해 accessToken만 취급하므로 access인지 확인
+        if (!"access".equals(category)) {
+            PrintWriter writer = response.getWriter();
+            writer.println("invalid access token");
 
-            System.out.println("token expired");
-            filterChain.doFilter(request, response);
-
-            //조건이 해당되면 메소드 종료 (필수)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        //토큰에서 username과 role 획득
-        String username = jwtUtil.getUsername(token);
-        String role = jwtUtil.getRole(token);
+        // 사용자명과 권한을 accessToken에서 추출
+        String username = jwtUtil.getUsername(originToken);
+        String role = jwtUtil.getRole(originToken);
 
-        //userDTO를 생성하여 값 set
         UserDTO userDTO = new UserDTO();
-        userDTO.setUsername(username);
+        userDTO.setName(username);
         userDTO.setRole(role);
 
-        //UserDetails에 회원 정보 객체 담기
         CustomOAuth2User customOAuth2User = new CustomOAuth2User(userDTO);
 
-        //스프링 시큐리티 인증 토큰 생성
-        Authentication authToken =
+        Authentication authentication =
                 new UsernamePasswordAuthenticationToken(customOAuth2User, null, customOAuth2User.getAuthorities());
-
-        //세션에 사용자 등록
-        SecurityContextHolder.getContext().setAuthentication(authToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
     }

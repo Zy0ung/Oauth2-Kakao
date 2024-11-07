@@ -1,6 +1,3 @@
-/*
- * Copyright ⓒ 2017 Brand X Corp. All Rights Reserved
- */
 package com.example.oauth2_kakao.jwt;
 
 import org.springframework.stereotype.Component;
@@ -31,9 +28,11 @@ public class JWTUtil {
     private Long tokenExpirationTime; // 만료 시간을 밀리초 단위로 저장
 
     public JWTUtil(@Value("${spring.jwt.secret}") String secret) {
-        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
+        secretKey =
+                new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
+    // 사용자명 추출
     public String getUsername(String token) {
         return Jwts.parser()
                    .setSigningKey(secretKey)
@@ -43,34 +42,46 @@ public class JWTUtil {
                    .get("username", String.class);
     }
 
+    // 권한 추출
     public String getRole(String token) {
         return Jwts.parser()
-                   .setSigningKey(secretKey)
+                   .verifyWith(secretKey)
                    .build()
                    .parseSignedClaims(token)
-                   .getBody()
+                   .getPayload()
                    .get("role", String.class);
     }
 
+    // token 유효 확인
     public Boolean isExpired(String token) {
-        Date expirationDate =
-                Jwts.parser().setSigningKey(secretKey).build().parseSignedClaims(token).getBody().getExpiration();
-        return expirationDate.before(new Date());
+        return Jwts.parser()
+                   .verifyWith(secretKey)
+                   .build()
+                   .parseSignedClaims(token)
+                   .getPayload()
+                   .getExpiration()
+                   .before(new Date());
     }
 
-    public String createJwt(String username, String role) {
-        // 현재 시간을 UTC 기준으로 가져온다.
-        Date now = new Date(System.currentTimeMillis());
+    // accessToken인지 refreshToken인지 확인
+    public String getCategory(String name) {
+        return Jwts.parser()
+                   .verifyWith(secretKey)
+                   .build()
+                   .parseSignedClaims(name)
+                   .getPayload()
+                   .get("category", String.class);
+    }
 
-        // 만료 시간을 한국 표준시(KST)로 설정
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(now);
-        calendar.add(Calendar.MILLISECOND, Math.toIntExact(tokenExpirationTime)); // 설정된 만료 시간 추가
-
-        Date expirationDate = calendar.getTime(); // 최종 만료 시간
-
-        return Jwts.builder().claim("username", username).claim("role", role).setIssuedAt(now) // 현재 시간
-                   .setExpiration(expirationDate) // 만료 시간
-                   .signWith(secretKey).compact();
+    // JWT 발급
+    public String createJwt(String category, String username, String role, Long expiredMs) {
+        return Jwts.builder()
+                   .claim("category", category)
+                   .claim("username", username)
+                   .claim("role", role)
+                   .issuedAt(new Date(System.currentTimeMillis()))
+                   .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                   .signWith(secretKey)
+                   .compact();
     }
 }
