@@ -28,6 +28,9 @@ public class User {
     @Column(name = "provider_id", length = 100)
     private String providerId; // 제공자 ID
 
+    @Column(name = "user_name", length = 100)
+    private String userName;
+
     @Column(name = "name", length = 100)
     @NotNull
     private String name; // 이름
@@ -60,9 +63,10 @@ public class User {
     }
 
     @Builder
-    public User(String provider, String providerId, String name, String email, String role, String profileImage) {
+    public User(String provider, String providerId, String userName, String name, String email, String role, String profileImage) {
         this.provider = provider;
         this.providerId = providerId;
+        this.userName = userName;
         this.name = name;
         this.email = email;
         this.role = role;

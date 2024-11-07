@@ -1,8 +1,11 @@
 package com.example.oauth2_kakao.controller;
 
+import com.example.oauth2_kakao.jwt.JWTUtil;
+import com.example.oauth2_kakao.service.RedisService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +19,11 @@ import java.util.Optional;
  * @author jiyoung
  */
 @Controller
+@RequiredArgsConstructor
 public class MainController {
+
+    private final JWTUtil jwtUtil;
+    private final RedisService redisService;
 
     @GetMapping("/")
     @ResponseBody
@@ -53,14 +60,14 @@ public class MainController {
             return;
         }
 
-//        String key = jwtUtil.getUsername(refreshToken);
+        String key = jwtUtil.getUsername(refreshToken);
 
-//        if(redisService.getValues(key) == null) {
-//            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-//            return;
-//        }
-//
-//        redisService.deleteValues(key);
+        if (redisService.getValues(key) == null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        redisService.deleteValues(key);
 
         Cookie cookie = new Cookie("refresh", null);
         cookie.setMaxAge(0);
@@ -68,6 +75,6 @@ public class MainController {
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.addCookie(cookie);
-
+        response.sendRedirect("/");
     }
 }
